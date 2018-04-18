@@ -1,6 +1,9 @@
 ﻿// Copyright (c) .NET Foundation. All rights reserved.
 // Licensed under the MIT License. See License.txt in the project root for license information.
 
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -53,6 +56,29 @@ namespace Microsoft.Azure.WebJobs.Script.WebHost.Controllers
         public IActionResult GetInstanceInfo()
         {
             return Ok(_instanceManager.GetInstanceInfo());
+        }
+
+        [HttpGet]
+        [Route("admin/host/env")]
+        public IActionResult GetEnv()
+        {
+            var dic = new Dictionary<string, string>();
+            var dic2 = new Dictionary<string, string>();
+            foreach (DictionaryEntry de in System.Environment.GetEnvironmentVariables())
+            {
+                dic.Add(de.Key.ToString(), de.Value.ToString());
+            }
+
+            foreach (var pair in dic.Select(p => new { key = p.Key, value = ScriptSettingsManager.Instance.GetSetting(p.Key) }))
+            {
+                dic2.Add(pair.key, pair.value);
+            }
+
+            return Ok(new
+            {
+                env = dic,
+                setting = dic2
+            });
         }
     }
 }
