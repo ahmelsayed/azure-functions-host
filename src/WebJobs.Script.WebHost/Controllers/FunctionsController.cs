@@ -3,6 +3,8 @@
 
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.IO.Abstractions;
+using System.IO.Compression;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -12,17 +14,19 @@ using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.WebJobs.Script.Description;
 using Microsoft.Azure.WebJobs.Script.Management.Models;
+using Microsoft.Azure.WebJobs.Script.WebHost.Extensions;
 using Microsoft.Azure.WebJobs.Script.WebHost.Filters;
 using Microsoft.Azure.WebJobs.Script.WebHost.Management;
 using Microsoft.Azure.WebJobs.Script.WebHost.Models;
 using Microsoft.Azure.WebJobs.Script.WebHost.Security.Authorization.Policies;
 using Microsoft.Extensions.Logging;
+using Microsoft.Net.Http.Headers;
 
 namespace Microsoft.Azure.WebJobs.Script.WebHost.Controllers
 {
     /// <summary>
     /// Controller responsible for administrative and management operations on functions
-    /// example retriving a list of functions, invoking a function, creating a function, etc
+    /// example retrieving a list of functions, invoking a function, creating a function, etc
     /// </summary>
     public class FunctionsController : Controller
     {
@@ -40,7 +44,7 @@ namespace Microsoft.Azure.WebJobs.Script.WebHost.Controllers
 
         [HttpGet]
         [Route("admin/functions")]
-        //[Authorize(Policy = PolicyNames.AdminAuthLevel)]
+        [Authorize(Policy = PolicyNames.AdminAuthLevel)]
         public async Task<IActionResult> List()
         {
             return Ok(await _functionsManager.GetFunctionsMetadata(Request));
@@ -48,7 +52,7 @@ namespace Microsoft.Azure.WebJobs.Script.WebHost.Controllers
 
         [HttpGet]
         [Route("admin/functions/{name}")]
-        //[Authorize(Policy = PolicyNames.AdminAuthLevel)]
+        [Authorize(Policy = PolicyNames.AdminAuthLevel)]
         public async Task<IActionResult> Get(string name)
         {
             (var success, var function) = await _functionsManager.TryGetFunction(name, Request);
@@ -60,7 +64,7 @@ namespace Microsoft.Azure.WebJobs.Script.WebHost.Controllers
 
         [HttpPut]
         [Route("admin/functions/{name}")]
-        //[Authorize(Policy = PolicyNames.AdminAuthLevel)]
+        [Authorize(Policy = PolicyNames.AdminAuthLevel)]
         public async Task<IActionResult> CreateOrUpdate(string name, [FromBody] FunctionMetadataResponse functionMetadata)
         {
             if (!FunctionNameValidationRegex.IsMatch(name))
@@ -87,7 +91,7 @@ namespace Microsoft.Azure.WebJobs.Script.WebHost.Controllers
 
         [HttpPost]
         [Route("admin/functions/{name}")]
-        //[Authorize(Policy = PolicyNames.AdminAuthLevel)]
+        [Authorize(Policy = PolicyNames.AdminAuthLevel)]
         [RequiresRunningHost]
         public IActionResult Invoke(string name, [FromBody] FunctionInvocation invocation)
         {
@@ -114,7 +118,7 @@ namespace Microsoft.Azure.WebJobs.Script.WebHost.Controllers
 
         [HttpGet]
         [Route("admin/functions/{name}/status")]
-        //[Authorize(Policy = PolicyNames.AdminAuthLevel)]
+        [Authorize(Policy = PolicyNames.AdminAuthLevel)]
         [RequiresRunningHost]
         public IActionResult GetFunctionStatus(string name)
         {
@@ -142,7 +146,7 @@ namespace Microsoft.Azure.WebJobs.Script.WebHost.Controllers
 
         [HttpDelete]
         [Route("admin/functions/{name}")]
-        //[Authorize(Policy = PolicyNames.AdminAuthLevel)]
+        [Authorize(Policy = PolicyNames.AdminAuthLevel)]
         public async Task<IActionResult> Delete(string name)
         {
             (var found, var function) = await _functionsManager.TryGetFunction(name, Request);
@@ -161,6 +165,36 @@ namespace Microsoft.Azure.WebJobs.Script.WebHost.Controllers
             {
                 return StatusCode(StatusCodes.Status500InternalServerError, error);
             }
+        }
+
+        [HttpGet]
+        [Route("admin/functions/download")]
+        [Authorize(Policy = PolicyNames.AdminAuthLevel)]
+        public IActionResult Download()
+        {
+            var path = _scriptHostManager.Instance.ScriptConfig.RootScriptPath;
+            var dirInfo = FileUtility.DirectoryInfoFromDirectoryName(path);
+            return new FileCallbackResult(new MediaTypeHeaderValue("application/octet-stream"), async (outputStream, _) =>
+            {
+                using (var zipArchive = new ZipArchive(outputStream, ZipArchiveMode.Create))
+                {
+                    foreach (FileSystemInfoBase fileSysInfo in dirInfo.GetFileSystemInfos())
+                    {
+                        if (fileSysInfo is DirectoryInfoBase directoryInfo)
+                        {
+                            await zipArchive.AddDirectory(directoryInfo, fileSysInfo.Name);
+                        }
+                        else
+                        {
+                            // Add it at the root of the zip
+                            await zipArchive.AddFile(fileSysInfo.FullName, string.Empty);
+                        }
+                    }
+                }
+            })
+            {
+                FileDownloadName = (System.Environment.GetEnvironmentVariable("WEBSITE_SITE_NAME") ?? "functions") + ".zip"
+            };
         }
     }
 }

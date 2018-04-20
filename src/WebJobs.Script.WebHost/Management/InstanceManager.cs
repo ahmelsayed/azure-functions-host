@@ -13,7 +13,7 @@ namespace Microsoft.Azure.WebJobs.Script.WebHost.Management
 {
     public class InstanceManager : IInstanceManager
     {
-        private static AssignmentContext _assignmentContext;
+        private static HostAssignmentContext _assignmentContext;
         private static object _assignmentLock = new object();
 
         private readonly ScriptHostManager _scriptHostManager;
@@ -27,7 +27,7 @@ namespace Microsoft.Azure.WebJobs.Script.WebHost.Management
             _logger = loggerFactory.CreateLogger(nameof(InstanceManager));
         }
 
-        public bool TryAssign(AssignmentContext assignmentContext)
+        public bool TryAssign(HostAssignmentContext assignmentContext)
         {
             if (_assignmentContext == null)
             {
@@ -53,7 +53,7 @@ namespace Microsoft.Azure.WebJobs.Script.WebHost.Management
             }
         }
 
-        private async Task Specialize(AssignmentContext assignmentContext)
+        private async Task Specialize(HostAssignmentContext assignmentContext)
         {
             try
             {

@@ -12,6 +12,11 @@ using Microsoft.Azure.WebJobs.Script.WebHost.Security.Authorization.Policies;
 
 namespace Microsoft.Azure.WebJobs.Script.WebHost.Controllers
 {
+    /// <summary>
+    /// Controller responsible for instance operations that are orthogonal to the script host.
+    /// An instance is an unassigned generic container running with the runtime in standby mode.
+    /// These APIs are used by the AppService Controller to validate standby instance status and info.
+    /// </summary>
     public class InstanceController : Controller
     {
         private readonly WebScriptHostManager _scriptHostManager;
@@ -27,10 +32,10 @@ namespace Microsoft.Azure.WebJobs.Script.WebHost.Controllers
 
         [HttpPost]
         [Route("admin/instance/assign")]
-        //[Authorize(Policy = PolicyNames.AdminAuthLevelOrInternal)]
-        public IActionResult Assign([FromBody] EncryptedAssignmentContext encryptedAssignmentContext)
+        [Authorize(Policy = PolicyNames.AdminAuthLevel)]
+        public IActionResult Assign([FromBody] EncryptedHostAssignmentContext encryptedAssignmentContext)
         {
-            var containerKey = _settingsManager.GetSetting(ScriptConstants.ContainerEncryptionKey);
+            var containerKey = _settingsManager.GetSetting(EnvironmentSettingNames.ContainerEncryptionKey);
             var assignmentContext = encryptedAssignmentContext.Decrypt(containerKey);
             return _instanceManager.TryAssign(assignmentContext)
                 ? Accepted()
@@ -39,7 +44,7 @@ namespace Microsoft.Azure.WebJobs.Script.WebHost.Controllers
 
         [HttpGet]
         [Route("admin/instance/status")]
-        //[Authorize(Policy = PolicyNames.AdminAuthLevelOrInternal)]
+        [Authorize(Policy = PolicyNames.AdminAuthLevel)]
         public async Task<IActionResult> GetInstanceStatus([FromQuery] int timeout = int.MaxValue)
         {
             return await _scriptHostManager.DelayUntilHostReady(timeoutSeconds: timeout)
@@ -49,7 +54,7 @@ namespace Microsoft.Azure.WebJobs.Script.WebHost.Controllers
 
         [HttpGet]
         [Route("admin/instance/info")]
-        //[Authorize(Policy = PolicyNames.AdminAuthLevelOrInternal)]
+        [Authorize(Policy = PolicyNames.AdminAuthLevel)]
         public IActionResult GetInstanceInfo()
         {
             return Ok(_instanceManager.GetInstanceInfo());

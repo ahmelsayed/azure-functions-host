@@ -8,7 +8,7 @@ using Newtonsoft.Json;
 
 namespace Microsoft.Azure.WebJobs.Script.WebHost.Models
 {
-    public class AssignmentContext
+    public class HostAssignmentContext
     {
         [JsonProperty("siteId")]
         public int SiteId { get; set; }
@@ -26,13 +26,13 @@ namespace Microsoft.Azure.WebJobs.Script.WebHost.Models
         {
             get
             {
-                if (Environment.ContainsKey(ScriptConstants.RunFromZipSettingName))
+                if (Environment.ContainsKey(EnvironmentSettingNames.AzureWebsiteAltZipDeployment))
                 {
-                    return Environment[ScriptConstants.RunFromZipSettingName];
+                    return Environment[EnvironmentSettingNames.AzureWebsiteAltZipDeployment];
                 }
-                else if (Environment.ContainsKey(ScriptConstants.RunFromZipAltSettingName))
+                else if (Environment.ContainsKey(EnvironmentSettingNames.AzureWebsiteZipDeployment))
                 {
-                    return Environment[ScriptConstants.RunFromZipAltSettingName];
+                    return Environment[EnvironmentSettingNames.AzureWebsiteZipDeployment];
                 }
                 else
                 {
@@ -41,7 +41,7 @@ namespace Microsoft.Azure.WebJobs.Script.WebHost.Models
             }
         }
 
-        public bool Equals(AssignmentContext other)
+        public bool Equals(HostAssignmentContext other)
         {
             if (other == null)
             {

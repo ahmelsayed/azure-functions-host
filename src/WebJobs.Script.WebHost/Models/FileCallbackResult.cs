@@ -11,7 +11,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Net.Http.Headers;
 
 // https://github.com/StephenClearyExamples/AsyncDynamicZip/tree/core-ziparchive
-namespace Microsoft.Azure.WebJobs.Script.WebHost.Controllers.Results
+namespace Microsoft.Azure.WebJobs.Script.WebHost.Models
 {
     /// <summary>
     /// Represents an <see cref="ActionResult"/> that when executed will
@@ -22,7 +22,7 @@ namespace Microsoft.Azure.WebJobs.Script.WebHost.Controllers.Results
         private Func<Stream, ActionContext, Task> _callback;
 
         /// <summary>
-        /// Creates a new <see cref="FileCallbackResult"/> instance.
+        /// Initializes a new instance of the <see cref="FileCallbackResult"/> class.
         /// </summary>
         /// <param name="contentType">The Content-Type header of the response.</param>
         /// <param name="callback">The stream with the file.</param>
@@ -32,7 +32,7 @@ namespace Microsoft.Azure.WebJobs.Script.WebHost.Controllers.Results
         }
 
         /// <summary>
-        /// Creates a new <see cref="FileCallbackResult"/> instance.
+        /// Initializes a new instance of the <see cref="FileCallbackResult"/> class.
         /// </summary>
         /// <param name="contentType">The Content-Type header of the response.</param>
         /// <param name="callback">The stream with the file.</param>
@@ -56,6 +56,7 @@ namespace Microsoft.Azure.WebJobs.Script.WebHost.Controllers.Results
             {
                 return _callback;
             }
+
             set
             {
                 if (value == null)

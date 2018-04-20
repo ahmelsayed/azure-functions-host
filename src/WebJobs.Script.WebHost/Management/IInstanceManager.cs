@@ -10,6 +10,6 @@ namespace Microsoft.Azure.WebJobs.Script.WebHost.Management
     {
         IDictionary<string, string> GetInstanceInfo();
 
-        bool TryAssign(AssignmentContext assignmentContext);
+        bool TryAssign(HostAssignmentContext assignmentContext);
     }
 }
