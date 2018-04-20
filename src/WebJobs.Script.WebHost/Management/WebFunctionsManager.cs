@@ -262,15 +262,5 @@ namespace Microsoft.Azure.WebJobs.Script.WebHost.Management
         {
             public string HubName { get; set; }
         }
-
-        private class HostJsonModel
-        {
-            public DurableTaskHostModel DurableTask { get; set; }
-        }
-
-        private class DurableTaskHostModel
-        {
-            public string HubName { get; set; }
-        }
     }
 }

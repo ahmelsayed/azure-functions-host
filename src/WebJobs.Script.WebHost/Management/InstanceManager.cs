@@ -47,7 +47,6 @@ namespace Microsoft.Azure.WebJobs.Script.WebHost.Management
             }
             else
             {
-                // Decrypt
                 // No lock needed here since _assignmentContext is not null when we are here
                 return _assignmentContext.Equals(assignmentContext);
             }

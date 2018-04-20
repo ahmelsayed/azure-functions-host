@@ -20,7 +20,7 @@ namespace Microsoft.Azure.WebJobs.Script.WebHost.Helpers
         /// <returns>a SWT signed by this app</returns>
         public static string CreateToken(DateTime validUntil) => Encrypt($"exp={validUntil.Ticks}");
 
-        private static string Encrypt(string value)
+        internal static string Encrypt(string value)
         {
             using (var aes = new AesManaged { Key = GetWebSiteAuthEncryptionKey() })
             {
@@ -45,7 +45,7 @@ namespace Microsoft.Azure.WebJobs.Script.WebHost.Helpers
             }
         }
 
-        public static string Decrypt(byte[] encryptionKey, string value)
+        internal static string Decrypt(byte[] encryptionKey, string value)
         {
             var parts = value.Split(new[] { '.' }, StringSplitOptions.RemoveEmptyEntries);
             if (parts.Length != 2 && parts.Length != 3)
