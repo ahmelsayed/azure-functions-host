@@ -23,11 +23,11 @@ namespace Microsoft.Azure.WebJobs.Script.WebHost.Controllers
         private readonly IInstanceManager _instanceManager;
         private readonly ILogger _logger;
 
-        public InstanceController(IEnvironment environment, IInstanceManager instanceManager, ILogger logger)
+        public InstanceController(IEnvironment environment, IInstanceManager instanceManager, ILoggerFactory loggerFactory)
         {
             _environment = environment;
             _instanceManager = instanceManager;
-            _logger = logger;
+            _logger = loggerFactory.CreateLogger(nameof(InstanceController));
         }
 
         [HttpPost]
