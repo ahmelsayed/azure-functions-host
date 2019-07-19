@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.WebJobs.Script.WebHost.Management;
 using Microsoft.Azure.WebJobs.Script.WebHost.Models;
 using Microsoft.Azure.WebJobs.Script.WebHost.Security.Authorization.Policies;
+using Microsoft.Extensions.Logging;
 
 namespace Microsoft.Azure.WebJobs.Script.WebHost.Controllers
 {
@@ -20,11 +21,13 @@ namespace Microsoft.Azure.WebJobs.Script.WebHost.Controllers
     {
         private readonly IEnvironment _environment;
         private readonly IInstanceManager _instanceManager;
+        private readonly ILogger _logger;
 
-        public InstanceController(IEnvironment environment, IInstanceManager instanceManager)
+        public InstanceController(IEnvironment environment, IInstanceManager instanceManager, ILogger logger)
         {
             _environment = environment;
             _instanceManager = instanceManager;
+            _logger = logger;
         }
 
         [HttpPost]
@@ -32,17 +35,20 @@ namespace Microsoft.Azure.WebJobs.Script.WebHost.Controllers
         [Authorize(Policy = PolicyNames.AdminAuthLevel)]
         public async Task<IActionResult> Assign([FromBody] EncryptedHostAssignmentContext encryptedAssignmentContext)
         {
+            _logger.LogInformation($"InstanceController Assign()");
             var containerKey = _environment.GetEnvironmentVariable(EnvironmentSettingNames.ContainerEncryptionKey);
             var assignmentContext = encryptedAssignmentContext.Decrypt(containerKey);
 
             // before starting the assignment we want to perform as much
             // up front validation on the context as possible
+            _logger.LogInformation($"InstanceController Calling Validate()");
             string error = await _instanceManager.ValidateContext(assignmentContext);
             if (error != null)
             {
                 return StatusCode(StatusCodes.Status400BadRequest, error);
             }
 
+            _logger.LogInformation("Okay it's valid");
             // Wait for Sidecar specialization to complete before returning ok.
             // This shouldn't take too long so ok to do this sequentially.
             error = await _instanceManager.SpecializeMSISidecar(assignmentContext);
@@ -51,8 +57,11 @@ namespace Microsoft.Azure.WebJobs.Script.WebHost.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, error);
             }
 
+            _logger.LogInformation($"Msi is done");
+
             var result = _instanceManager.StartAssignment(assignmentContext);
 
+            _logger.LogInformation($"return");
             return result
                 ? Accepted()
                 : StatusCode(StatusCodes.Status409Conflict, "Instance already assigned");
