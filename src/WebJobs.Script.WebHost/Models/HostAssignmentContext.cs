@@ -24,6 +24,8 @@ namespace Microsoft.Azure.WebJobs.Script.WebHost.Models
         [JsonProperty("MSISpecializationPayload")]
         public MSIContext MSIContext { get; set; }
 
+        public long? PackageContentLength { get; set; }
+
         public string AzureFilesConnectionString
             => Environment.ContainsKey(EnvironmentSettingNames.AzureFilesConnectionString)
                 ? Environment[EnvironmentSettingNames.AzureFilesConnectionString]
