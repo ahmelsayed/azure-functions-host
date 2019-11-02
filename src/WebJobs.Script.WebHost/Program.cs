@@ -4,6 +4,7 @@
 using System;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Azure.WebJobs.Script.WebHost.Configuration;
 using Microsoft.Azure.WebJobs.Script.WebHost.DependencyInjection;
@@ -13,14 +14,47 @@ using Microsoft.Extensions.Configuration.EnvironmentVariables;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
+using MongoDB.Bson;
+using MongoDB.Driver;
 using DataProtectionCostants = Microsoft.Azure.Web.DataProtection.Constants;
 
 namespace Microsoft.Azure.WebJobs.Script.WebHost
 {
     public class Program
     {
-        public static void Main(string[] args)
+        public static async Task Main(string[] args)
         {
+            try
+            {
+                var clientSettings = new MongoClientSettings
+                {
+                    Server = new MongoServerAddress("localhost", 27017),
+                    ClusterConfigurator = builder =>
+                    {
+                        builder.ConfigureCluster(settings => settings.With(serverSelectionTimeout: TimeSpan.FromMilliseconds(1)));
+                    }
+                };
+                var client = new MongoClient(clientSettings);
+
+                var database = client.GetDatabase("foo");
+                var collection = database.GetCollection<BsonDocument>("bar");
+                await collection.InsertOneAsync(new BsonDocument("Name", "Jack"));
+                var list = await collection.Find(new BsonDocument("Name", "jack"))
+                    .ToListAsync();
+
+                foreach (var document in list)
+                {
+                    Console.WriteLine(document["Name"]);
+                }
+            }
+            catch (TimeoutException)
+            {
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+            }
+
             InitializeProcess();
 
             var host = BuildWebHost(args);
